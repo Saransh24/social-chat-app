@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import Logo from "../assets/logo.svg";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
+import { registerRoute } from "../utils/APIRoutes";
 
 const Register = () => {
+  const navigate = useNavigate();
+
   const [values,setValues] = useState({
     username: "",
     email: "",
@@ -21,25 +25,47 @@ const Register = () => {
     theme: "dark"
   }
 
-  const handleSubmit = (event) => {
+  useEffect(() => {
+    if(localStorage.getItem('chat-app-user')) {
+      navigate('/')
+    }
+  }, [])
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if(handleValidation()){
-      
+      const {password,confirmPassword,username,email} = values;
+      const {data} = await axios.post(registerRoute, {
+        username,
+        email,
+        password
+      });
+      if(data.status===false){
+        toast.error(data.msg, toastOptions);
+      }
+      if(data.status===true){
+        localStorage.setItem('chat-app-user', JSON.stringify(data.user));
+        navigate("/");
+      }
     };
   };
 
   const handleValidation = () => {
     const {password,confirmPassword,username,email} = values;
-    if(password!==confirmPassword){
-      toast.error("Password and Confirm Password should be same.", toastOptions );
-      return false;
-    }
-    else if (password.length < 8){
-      toast.error("Password should be equal or greater than 8 characters", toastOptions);
+    if(username===""){
+      toast.error("Username should not be empty.", toastOptions );
       return false;
     }
     else if(email===""){
-      toast.error("email is required", toastOptions);
+      toast.error("Email is required.", toastOptions);
+      return false;
+    }
+    else if (password.length < 8){
+      toast.error("Password should be equal or greater than 8 characters.", toastOptions);
+      return false;
+    }
+    else if(password!==confirmPassword){
+      toast.error("Password and Confirm Password should be same.", toastOptions );
       return false;
     }
     return true;
