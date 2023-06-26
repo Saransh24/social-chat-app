@@ -9,7 +9,7 @@ import { getAllMessagesRoute, sendMessageRoute } from "../utils/APIRoutes";
 const ChatContainer = ({ currentChat, currentUser }) => {
   const [messages,setMessages] = useState([]);
   
-  const settingMessages = async () => {
+  const fetchingMessages = async () => {
     const response = await axios.post(getAllMessagesRoute,{
       from: currentUser._id,
       to: currentChat._id,
@@ -19,7 +19,7 @@ const ChatContainer = ({ currentChat, currentUser }) => {
   }
 
   useEffect(() => {
-    settingMessages();
+    fetchingMessages();
   },[currentChat]);
   
   const handleSendMsg = async (msg) => {
