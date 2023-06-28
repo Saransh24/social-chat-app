@@ -1,78 +1,81 @@
-import React, { useState, useEffect } from "react";
-import styled from "styled-components";
-import {Link, useNavigate} from "react-router-dom";
-import Logo from "../assets/logo.svg";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import axios from "axios";
-import { registerRoute } from "../utils/APIRoutes";
+import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import { Link, useNavigate } from 'react-router-dom';
+import Logo from '../assets/logo.svg';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
+import { registerRoute } from '../utils/APIRoutes';
 
-const Register = () => {
+const RegisterPage = () => {
   const navigate = useNavigate();
 
-  const [values,setValues] = useState({
-    username: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+  const [values, setValues] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
   });
 
   const toastOptions = {
-    position: "bottom-right",
+    position: 'bottom-right',
     autoClose: 8000,
     pauseOnHover: true,
     draggable: true,
-    theme: "dark"
-  }
+    theme: 'dark',
+  };
 
   useEffect(() => {
-    if(localStorage.getItem('chat-app-user')) {
-      navigate('/')
+    if (localStorage.getItem('chat-app-user')) {
+      navigate('/');
     }
-  }, [])
+  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if(handleValidation()){
-      const {password,confirmPassword,username,email} = values;
-      const {data} = await axios.post(registerRoute, {
+    if (validateForm()) {
+      const { password, confirmPassword, username, email } = values;
+      const { data } = await axios.post(registerRoute, {
         username,
         email,
-        password
+        password,
       });
-      if(data.status===false){
+      if (data.status === false) {
         toast.error(data.msg, toastOptions);
       }
-      if(data.status===true){
+      if (data.status === true) {
         localStorage.setItem('chat-app-user', JSON.stringify(data.user));
-        navigate("/");
+        navigate('/');
       }
-    };
+    }
   };
 
-  const handleValidation = () => {
-    const {password,confirmPassword,username,email} = values;
-    if(username===""){
-      toast.error("Username should not be empty.", toastOptions );
+  const validateForm = () => {
+    const { password, confirmPassword, username, email } = values;
+    if (username === '') {
+      toast.error('Username should not be empty.', toastOptions);
       return false;
-    }
-    else if(email===""){
-      toast.error("Email is required.", toastOptions);
+    } else if (email === '') {
+      toast.error('Email is required.', toastOptions);
       return false;
-    }
-    else if (password.length < 8){
-      toast.error("Password should be equal or greater than 8 characters.", toastOptions);
+    } else if (password.length < 8) {
+      toast.error(
+        'Password should be equal to or greater than 8 characters.',
+        toastOptions
+      );
       return false;
-    }
-    else if(password!==confirmPassword){
-      toast.error("Password and Confirm Password should be same.", toastOptions );
+    } else if (password !== confirmPassword) {
+      toast.error(
+        'Password and Confirm Password should be the same.',
+        toastOptions
+      );
       return false;
     }
     return true;
   };
 
   const handleChange = (event) => {
-    setValues({...values, [event.target.name]:event.target.value });
+    setValues({ ...values, [event.target.name]: event.target.value });
   };
 
   return (
@@ -108,7 +111,9 @@ const Register = () => {
             onChange={(e) => handleChange(e)}
           />
           <button type="submit">Create User</button>
-          <span>Already have an account ? <Link to="/login">Login</Link> </span>
+          <span>
+            Already have an account ? <Link to="/login">Login</Link>{' '}
+          </span>
         </form>
       </FormContainer>
       <ToastContainer />
@@ -154,7 +159,7 @@ const FormContainer = styled.div`
       width: 100%;
       font-size: 1rem;
       &:focus {
-        border: .1rem solid #997af0;
+        border: 0.1rem solid #997af0;
         outline: none;
       }
     }
@@ -168,7 +173,7 @@ const FormContainer = styled.div`
       border-radius: 0.4rem;
       font-size: 1rem;
       text-transform: uppercase;
-      transition: .5s ease-in-out;
+      transition: 0.5s ease-in-out;
       &:hover {
         background-color: #4e0eff;
       }
@@ -185,4 +190,4 @@ const FormContainer = styled.div`
   }
 `;
 
-export default Register;
+export default RegisterPage;
