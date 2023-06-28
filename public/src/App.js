@@ -1,21 +1,21 @@
 import React from 'react';
-import {BrowserRouter, Routes, Route} from "react-router-dom";
-import Register from "./pages/Register";
-import Login from "./pages/Login";
-import Chat from "./pages/Chat";
-import SetAvatar from './pages/SetAvatar';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import RegisterPage from './pages/Register';
+import LoginPage from './pages/Login';
+import ChatPage from './pages/Chat';
+import SetAvatarPage from './pages/SetAvatar';
 
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/register" element={<Register />} />
-        <Route path="/" element={<Chat />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/setAvatar" element={<SetAvatar />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/" element={<ChatPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/setAvatar" element={<SetAvatarPage />} />
       </Routes>
     </BrowserRouter>
-  )
-}
+  );
+};
 
-export default App
+export default App;
