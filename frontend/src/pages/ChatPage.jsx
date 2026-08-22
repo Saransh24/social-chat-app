@@ -1,5 +1,6 @@
 import { useWallpaper } from "../context/wallpaper";
 import { useChatStore } from "../store/useChatStore";
+import { useAuthStore } from "../store/useAuthStore";
 import { useSelectedConversation } from "../hooks/useSelectedConversation";
 import { useEffect } from "react";
 import ChatSidebar from "../components/chat/ChatSidebar";
@@ -16,6 +17,11 @@ function ChatPage() {
   const subscribeToMessages = useChatStore((state) => state.subscribeToMessages);
   const unsubscribeFromMessages = useChatStore((state) => state.unsubscribeFromMessages);
 
+  // subscribeToMessages needs a live socket; if it is still connecting it bails out.
+  // Depending on it here re-runs the effect once the socket exists, so the listener
+  // is never silently skipped.
+  const socket = useAuthStore((state) => state.socket);
+
   const { activeConversation, activeConversationId, isLargeScreen } = useSelectedConversation();
 
   useEffect(() => {
@@ -31,7 +37,7 @@ function ChatPage() {
 
     // cleanup
     return () => unsubscribeFromMessages();
-  }, [getMessages, activeConversationId, subscribeToMessages, unsubscribeFromMessages]);
+  }, [getMessages, activeConversationId, subscribeToMessages, unsubscribeFromMessages, socket]);
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden p-2 sm:p-3 md:p-8" style={frameStyle}>

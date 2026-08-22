@@ -32,7 +32,14 @@ export const useAuthStore = create((set, get) => ({
   },
 
   connectSocket: (user) => {
-    if (!user || get().socket?.connected) return;
+    if (!user) return;
+
+    // A socket that is connected OR still dialling counts as ours. Checking only
+    // .connected would spawn a second socket during the initial handshake, and the
+    // server would then map the user to whichever one registered last.
+    const existing = get().socket;
+    if (existing?.connected || existing?.active) return;
+    existing?.close();
 
     const socket = io(BASE_URL, { query: { userId: user._id } });
 

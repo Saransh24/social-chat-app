@@ -26,7 +26,10 @@ io.on("connection", (socket) => {
 
   // socket.on is used to listen for events
   socket.on("disconnect", () => {
-    if (userId) delete userSocketMap[userId];
+    // only drop the mapping if it still points at THIS socket. On a reconnect the
+    // new socket registers first and the old one disconnects after, so deleting
+    // unconditionally would wipe the live entry and silently stop delivery.
+    if (userId && userSocketMap[userId] === socket.id) delete userSocketMap[userId];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 });
