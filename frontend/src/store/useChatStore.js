@@ -52,16 +52,19 @@ export const useChatStore = create(
         }
       },
 
-      getMessages: async (userId) => {
+      // silent: used by the reconnect/foreground resync. Skips the loading skeleton and
+      // the error toast so a routine catch-up never flashes the UI or nags on a flaky
+      // connection - the visible message list simply updates in place.
+      getMessages: async (userId, { silent = false } = {}) => {
         if (!userId) return;
-        set({ isMessagesLoading: true });
+        if (!silent) set({ isMessagesLoading: true });
         try {
           const res = await axiosInstance.get(`/messages/${userId}`);
           set({ messages: res.data });
         } catch (error) {
-          toast.error(error.response?.data?.message || "Failed to load messages");
+          if (!silent) toast.error(error.response?.data?.message || "Failed to load messages");
         } finally {
-          set({ isMessagesLoading: false });
+          if (!silent) set({ isMessagesLoading: false });
         }
       },
 

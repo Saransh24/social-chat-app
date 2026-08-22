@@ -39,6 +39,34 @@ function ChatPage() {
     return () => unsubscribeFromMessages();
   }, [getMessages, activeConversationId, subscribeToMessages, unsubscribeFromMessages, socket]);
 
+  // The server only emits to sockets that are connected at that instant - there is no
+  // offline queue. Anything sent while this device was asleep, backgrounded or off the
+  // network is stored in the database but never pushed here. So whenever we come back,
+  // resync from the API instead of waiting for a socket event that will never arrive.
+  useEffect(() => {
+    if (!activeConversationId) return;
+
+    const resync = () => {
+      getMessages(activeConversationId, { silent: true });
+      getConversations();
+    };
+
+    // fires on every successful (re)connect, including automatic reconnects
+    socket?.on("connect", resync);
+
+    // mobile browsers freeze background tabs and may restore without a socket event,
+    // so returning to the foreground is its own trigger
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") resync();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      socket?.off("connect", resync);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [socket, activeConversationId, getMessages, getConversations]);
+
   return (
     <div className="flex h-dvh flex-col overflow-hidden p-2 sm:p-3 md:p-8" style={frameStyle}>
       <div className="mx-auto flex w-full max-w-6xl flex-1 overflow-hidden rounded-2xl border border-border bg-background text-foreground">
