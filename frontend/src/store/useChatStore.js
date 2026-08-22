@@ -21,6 +21,7 @@ export const useChatStore = create(
       composerText: "",
       isSoundEnabled: true,
       isSendingMedia: false,
+      isSendingText: false,
 
       getUsers: async () => {
         set({ isUsersLoading: true });
@@ -69,12 +70,18 @@ export const useChatStore = create(
       },
 
       sendMessage: async (messageData) => {
-        const { selectedUser, messages } = get();
+        const { selectedUser } = get();
         if (!selectedUser) return false;
 
         try {
           const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
-          set({ messages: [...messages, res.data], composerText: "" });
+          // read the list at settle time, not at call time - a socket event may have
+          // appended to it while this request was in flight
+          set((state) =>
+            state.messages.some((m) => m._id === res.data._id)
+              ? state
+              : { messages: [...state.messages, res.data] },
+          );
           get().getConversations();
           return true;
         } catch (error) {
@@ -144,7 +151,21 @@ export const useChatStore = create(
         const messageText = get().composerText.trim();
         if (!conversationId || !messageText) return false;
 
-        return get().sendMessage({ text: messageText });
+        // A send can take seconds on mobile. Without this guard a second tap fires a
+        // second POST and the message is delivered twice.
+        if (get().isSendingText) return false;
+
+        // Clear the box up front rather than on success: the composer feels responsive,
+        // and a second tap finds nothing left to send. Restored below if the send fails.
+        set({ isSendingText: true, composerText: "" });
+
+        try {
+          const didSend = await get().sendMessage({ text: messageText });
+          if (!didSend) set({ composerText: messageText });
+          return didSend;
+        } finally {
+          set({ isSendingText: false });
+        }
       },
 
       sendMediaMessage: async ({ conversationId, file }) => {

@@ -10,6 +10,7 @@ export function ChatComposer() {
   const isSoundEnabled = useChatStore((state) => state.isSoundEnabled);
   const sendMediaMessage = useChatStore((state) => state.sendMediaMessage);
   const isSendingMedia = useChatStore((state) => state.isSendingMedia);
+  const isSendingText = useChatStore((state) => state.isSendingText);
   const sendTextMessage = useChatStore((state) => state.sendTextMessage);
   const setComposerText = useChatStore((state) => state.setComposerText);
   const { activeConversationId } = useSelectedConversation();
@@ -85,14 +86,24 @@ export function ChatComposer() {
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
+              if (isSendingText) return;
               handleSend();
             }
           }}
           className="flex-1 rounded-full"
         />
 
-        <Button variant="primary" isIconOnly isDisabled={!composerText.trim()} onPress={handleSend}>
-          <SendHorizontalIcon className="size-5" />
+        <Button
+          variant="primary"
+          isIconOnly
+          isDisabled={!composerText.trim() || isSendingText}
+          onPress={handleSend}
+        >
+          {isSendingText ? (
+            <LoaderIcon className="size-5 animate-spin" strokeWidth={2} aria-hidden />
+          ) : (
+            <SendHorizontalIcon className="size-5" />
+          )}
         </Button>
       </div>
     </footer>
