@@ -83,19 +83,36 @@ export const useChatStore = create(
         }
       },
 
-      subscribeToMessages: (userId) => {
-        if (!userId) return;
-
+      // One listener for the whole session, not one per open conversation. Scoping it to
+      // the selected chat meant a message from anyone else was dropped on the floor and
+      // the sidebar stayed stale until a refresh.
+      subscribeToMessages: () => {
         const socket = useAuthStore.getState().socket;
         if (!socket) return;
 
         socket.off("newMessage");
         socket.on("newMessage", (newMessage) => {
-          // if im not the receiver don't do anything just return
-          if (String(newMessage.senderId) !== String(userId)) return;
+          const { selectedUser, users, conversations } = get();
+          const isForOpenChat =
+            selectedUser && String(newMessage.senderId) === String(selectedUser._id);
 
-          set({ messages: [...get().messages, newMessage] });
+          if (isForOpenChat) {
+            // a reconnect can replay an event we already have, so key off the id
+            set((state) =>
+              state.messages.some((m) => m._id === newMessage._id)
+                ? state
+                : { messages: [...state.messages, newMessage] },
+            );
+          } else {
+            const sender =
+              users.find((u) => String(u._id) === String(newMessage.senderId)) ||
+              conversations.find((u) => String(u._id) === String(newMessage.senderId));
 
+            const preview = newMessage.text || (newMessage.video ? "Sent a video" : "Sent a photo");
+            toast(`${sender?.fullName ?? "New message"}: ${preview}`, { icon: "💬" });
+          }
+
+          // the sidebar has to reorder and surface brand-new chats either way
           get().getConversations();
         });
       },

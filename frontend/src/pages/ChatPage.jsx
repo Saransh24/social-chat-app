@@ -17,9 +17,8 @@ function ChatPage() {
   const subscribeToMessages = useChatStore((state) => state.subscribeToMessages);
   const unsubscribeFromMessages = useChatStore((state) => state.unsubscribeFromMessages);
 
-  // subscribeToMessages needs a live socket; if it is still connecting it bails out.
-  // Depending on it here re-runs the effect once the socket exists, so the listener
-  // is never silently skipped.
+  // Tracked so the effects below re-run once the socket exists. subscribeToMessages
+  // bails out on a null socket, so without this the listener could be skipped for good.
   const socket = useAuthStore((state) => state.socket);
 
   const { activeConversation, activeConversationId, isLargeScreen } = useSelectedConversation();
@@ -29,25 +28,30 @@ function ChatPage() {
     getConversations();
   }, [getConversations, getUsers]);
 
+  // The message listener belongs to the socket, not to whichever chat happens to be
+  // open, so incoming messages still land while you are on another conversation.
+  useEffect(() => {
+    if (!socket) return;
+
+    subscribeToMessages();
+
+    return () => unsubscribeFromMessages();
+  }, [socket, subscribeToMessages, unsubscribeFromMessages]);
+
   useEffect(() => {
     if (!activeConversationId) return;
 
     getMessages(activeConversationId);
-    subscribeToMessages(activeConversationId);
-
-    // cleanup
-    return () => unsubscribeFromMessages();
-  }, [getMessages, activeConversationId, subscribeToMessages, unsubscribeFromMessages, socket]);
+  }, [getMessages, activeConversationId]);
 
   // The server only emits to sockets that are connected at that instant - there is no
   // offline queue. Anything sent while this device was asleep, backgrounded or off the
   // network is stored in the database but never pushed here. So whenever we come back,
   // resync from the API instead of waiting for a socket event that will never arrive.
   useEffect(() => {
-    if (!activeConversationId) return;
-
     const resync = () => {
-      getMessages(activeConversationId, { silent: true });
+      // the sidebar is worth refreshing even with no chat open
+      if (activeConversationId) getMessages(activeConversationId, { silent: true });
       getConversations();
     };
 
