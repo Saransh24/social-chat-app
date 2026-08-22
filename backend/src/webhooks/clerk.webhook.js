@@ -33,10 +33,13 @@ router.post("/", async (req, res) => {
       const fullName =
         [u.first_name, u.last_name].filter(Boolean).join(" ") || u.username || email?.split("@")[0];
 
+      // No `new` / `returnDocument` here on purpose: the updated document is not used,
+      // so asking for a particular version of it would only trip Mongoose's deprecation
+      // warning for an option that changes nothing.
       await User.findOneAndUpdate(
         { clerkId: u.id },
         { clerkId: u.id, email, fullName, profilePic: u.image_url },
-        { new: true, upsert: true, setDefaultsOnInsert: true },
+        { upsert: true, setDefaultsOnInsert: true },
       );
     }
 
